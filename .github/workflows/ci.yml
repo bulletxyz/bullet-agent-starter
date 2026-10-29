@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: read
+
+jobs:
+  fmt:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # v1
+        with:
+          toolchain: nightly
+          components: rustfmt
+      - run: cargo +nightly fmt --all --check
+
+  check:
+    name: Clippy, tests, config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      # The compiler and components rust-toolchain.toml pins.
+      - run: rustup toolchain install
+      - run: cargo clippy --locked --all-targets -- -D warnings
+      - run: cargo test --locked
+      # The config the deploy ships, checked offline the way the agent loads it.
+      - name: Validate agent.toml
+        env:
+          BB_NETWORK: testnet
+          BB_SYMBOL: BTC-USD
+        run: cargo run --locked --bin bb-bot -- validate --config agent.toml

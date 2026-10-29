@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "ask": [
+      "Bash(gh pr merge:*)",
+      "Bash(gh stack merge:*)",
+      "Bash(gh api:*)"
+    ]
+  }
+}

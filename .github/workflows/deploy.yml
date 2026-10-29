@@ -1,0 +1,44 @@
+name: Deploy
+
+# Every merge to master builds this agent and deploys it to its Fly app as the next
+# version (v1, v2, ...). The framework's workflow does the work; see its header
+# for what each action does. Does nothing until `fly-app` below is filled in
+# (the setup skill does that).
+#
+# By hand (Actions > Deploy > Run workflow, or `gh workflow run deploy.yml`):
+#   action=rollback version=<N>   redeploy version N
+#   action=go-live                real orders (needs your limit secrets on Fly)
+#   action=paper                  back to paper trading
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "What to do"
+        type: choice
+        options: [deploy, rollback, go-live, paper]
+        default: deploy
+      version:
+        description: "rollback: the version to redeploy (e.g. 14)"
+        type: string
+        required: false
+        default: ""
+
+# contents: write pushes the bot-vN tags; the other two attest builds where
+# GitHub allows it.
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  deploy:
+    # Same release as bullet-agents in Cargo.toml.
+    uses: bulletxyz/bullet-bots/.github/workflows/agent-deploy.yml@v8
+    with:
+      fly-app: ""
+      action: ${{ inputs.action || 'deploy' }}
+      version: ${{ inputs.version }}
+    secrets:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

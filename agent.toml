@@ -1,0 +1,48 @@
+# My agent's config. No secrets, and no hard limits: max position, daily loss,
+# stale price, order rate, notional cap and main-account trading come only from
+# Fly secrets (BB_MM_MAX_POSITION, BB_MM_DAILY_LOSS_USD, BB_MM_STALE_SECS,
+# BB_MAX_ORDERS_PER_MIN, BB_MAX_NOTIONAL_USD, BB_BULLET_ALLOW_MAIN_ACCOUNT).
+# Setting any of them here is a load error.
+# Network and symbol come from env (BB_NETWORK, BB_SYMBOL); sub-account from
+# BB_BULLET_SUB_ACCOUNT. Paper or live comes from BB_MM_DRY_RUN.
+
+[engine]
+tick_interval_ms = 5000
+# The public listener (Fly's http_service and health check): only /health and
+# the OAuth-protected /mcp. /status and /metrics (P&L, positions) move to the
+# private port in BB_PRIVATE_STATUS_BIND, set by the deploy's fly.toml, which is
+# not exposed to the internet. As the framework's config/simple-mm-fly.toml.
+status_bind = "0.0.0.0:3030"
+
+[exchanges.bullet]
+type = "bullet"
+key_file = "/data/bullet.key"     # created on first boot
+require_delegate = true           # wait until you add this address as a delegate
+
+[strategy]
+type = "simple-mm"
+
+[strategy.simple-mm]
+bid_spread_bps = "2"
+ask_spread_bps = "2"
+order_size = "0.0003"
+# Fair value: quotes sit at fair +/- the spreads above. "binance" = the Binance
+# USD-M perp mid plus an EMA of the basis to the Bullet mid (falls back to the
+# Bullet mid while it warms up or when Binance is silent); "bullet" = the Bullet mid.
+fair_value = "binance"
+basis_halflife_secs = 300         # EMA half-life of the basis, 10-3600
+reference_stale_secs = 5          # Binance silence before the Bullet-mid fallback, 1-10
+max_divergence_bps = "20"         # Binance fair further than this from the Bullet mid: Bullet mid, 5-500
+skew_bps = "0"                    # inventory skew; 0-100 bps at max position
+refresh_secs = 5
+refresh_threshold_bps = "1"
+order_type = "post_only"
+dry_run = true                    # fail-safe: only BB_MM_DRY_RUN=false goes live
+state_dir = "/data"
+
+[strategy.simple-mm.fees]
+maker_bps = "0"
+min_spread_fee_multiplier = "3.0"
+
+[logging]
+level = "info"
