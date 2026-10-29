@@ -35,10 +35,12 @@ permissions:
 jobs:
   deploy:
     # Same release as bullet-agents in Cargo.toml.
-    uses: bulletxyz/bullet-bots/.github/workflows/agent-deploy.yml@v8
+    uses: bulletxyz/bullet-bots/.github/workflows/agent-deploy.yml@v11
     with:
       fly-app: ""
       action: ${{ inputs.action || 'deploy' }}
       version: ${{ inputs.version }}
     secrets:
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      # Only while bullet-bots is private: read access to it (unset otherwise).
+      BULLET_BOTS_TOKEN: ${{ secrets.BULLET_BOTS_TOKEN }}

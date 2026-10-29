@@ -124,8 +124,8 @@ built. No `gh` here (web): give the user
 Only from local Claude Code (the web can't reach Fly), and only after the user's
 explicit yes to the new values: `fly secrets set --app <name>
 BB_MM_MAX_POSITION=<btc>` (or `BB_MM_DAILY_LOSS_USD=<usd>`). It restarts the agent.
-Keep max position at or under about 20% of equity and daily loss about 5%, unless
-the user insists after hearing why. From the phone, `bullet_set_params` can tighten
+Default max position 1x (equity / price), daily loss about 5%. Up to 3x only if the user
+asks after hearing the liquidation distance (~30% move at 3x); never above 3x. From the phone, `bullet_set_params` can tighten
 within the limits; it can never raise them.
 
 ## "Update the framework"

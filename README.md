@@ -10,9 +10,8 @@ card on file, and Claude Code.
 
 1. Make your own private copy (skip this if you're reading this README in your own
    private agent repo already). With the GitHub CLI (`brew install gh` or
-   https://cli.github.com, then `gh auth login --web`), and `<handle>` replaced by a
-   short name of yours (lowercase letters, digits, dashes):
-   `gh repo create <handle>-bullet-agent --private --template bulletxyz/bullet-agent-starter --clone`
+   https://cli.github.com, then `gh auth login --web`):
+   `gh repo create bullet-mm --private --template bulletxyz/bullet-agent-starter --clone`
    Or on github.com: **Use this template**, private, then clone your new repo.
 2. Open that folder in Claude Code (terminal or desktop) and say **set up my Bullet
    agent**. Claude runs the commands; you click links and approve

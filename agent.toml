@@ -25,7 +25,7 @@ type = "simple-mm"
 [strategy.simple-mm]
 bid_spread_bps = "2"
 ask_spread_bps = "2"
-order_size = "0.0003"
+order_size = "0.0001"   # the venue minimum (~$8): start small, raise it later
 # Fair value: quotes sit at fair +/- the spreads above. "binance" = the Binance
 # USD-M perp mid plus an EMA of the basis to the Bullet mid (falls back to the
 # Bullet mid while it warms up or when Binance is silent); "bullet" = the Bullet mid.

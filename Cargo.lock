@@ -948,7 +948,7 @@ checksum = "2af50177e190e07a26ab74f8b1efbfe2ef87da2116221318cb1c2e82baf7de06"
 [[package]]
 name = "bb-alerts"
 version = "0.1.0"
-source = "git+https://github.com/bulletxyz/bullet-bots?tag=v8#d62f1549694bfab3780d279b6f05ea60287330ca"
+source = "git+https://github.com/bulletxyz/bullet-bots?tag=v11#7dd063b0dce0596babea9c37650e7ecf10de7918"
 dependencies = [
  "async-trait",
  "futures-util",
@@ -965,7 +965,7 @@ dependencies = [
 [[package]]
 name = "bb-bridge"
 version = "0.1.0"
-source = "git+https://github.com/bulletxyz/bullet-bots?tag=v8#d62f1549694bfab3780d279b6f05ea60287330ca"
+source = "git+https://github.com/bulletxyz/bullet-bots?tag=v11#7dd063b0dce0596babea9c37650e7ecf10de7918"
 dependencies = [
  "alloy",
  "anyhow",
@@ -984,7 +984,7 @@ dependencies = [
 [[package]]
 name = "bb-core"
 version = "0.1.0"
-source = "git+https://github.com/bulletxyz/bullet-bots?tag=v8#d62f1549694bfab3780d279b6f05ea60287330ca"
+source = "git+https://github.com/bulletxyz/bullet-bots?tag=v11#7dd063b0dce0596babea9c37650e7ecf10de7918"
 dependencies = [
  "async-trait",
  "axum",
@@ -1001,7 +1001,7 @@ dependencies = [
 [[package]]
 name = "bb-exchange-binance"
 version = "0.1.0"
-source = "git+https://github.com/bulletxyz/bullet-bots?tag=v8#d62f1549694bfab3780d279b6f05ea60287330ca"
+source = "git+https://github.com/bulletxyz/bullet-bots?tag=v11#7dd063b0dce0596babea9c37650e7ecf10de7918"
 dependencies = [
  "bb-core",
  "futures-util",
@@ -1016,7 +1016,7 @@ dependencies = [
 [[package]]
 name = "bb-exchange-bullet"
 version = "0.1.0"
-source = "git+https://github.com/bulletxyz/bullet-bots?tag=v8#d62f1549694bfab3780d279b6f05ea60287330ca"
+source = "git+https://github.com/bulletxyz/bullet-bots?tag=v11#7dd063b0dce0596babea9c37650e7ecf10de7918"
 dependencies = [
  "async-trait",
  "bb-core",
@@ -1036,7 +1036,7 @@ dependencies = [
 [[package]]
 name = "bb-exchange-hyperliquid"
 version = "0.1.0"
-source = "git+https://github.com/bulletxyz/bullet-bots?tag=v8#d62f1549694bfab3780d279b6f05ea60287330ca"
+source = "git+https://github.com/bulletxyz/bullet-bots?tag=v11#7dd063b0dce0596babea9c37650e7ecf10de7918"
 dependencies = [
  "alloy",
  "async-trait",
@@ -1055,7 +1055,7 @@ dependencies = [
 [[package]]
 name = "bb-mcp"
 version = "0.1.0"
-source = "git+https://github.com/bulletxyz/bullet-bots?tag=v8#d62f1549694bfab3780d279b6f05ea60287330ca"
+source = "git+https://github.com/bulletxyz/bullet-bots?tag=v11#7dd063b0dce0596babea9c37650e7ecf10de7918"
 dependencies = [
  "axum",
  "bb-core",
@@ -1079,7 +1079,7 @@ dependencies = [
 [[package]]
 name = "bb-mm"
 version = "0.1.0"
-source = "git+https://github.com/bulletxyz/bullet-bots?tag=v8#d62f1549694bfab3780d279b6f05ea60287330ca"
+source = "git+https://github.com/bulletxyz/bullet-bots?tag=v11#7dd063b0dce0596babea9c37650e7ecf10de7918"
 dependencies = [
  "async-trait",
  "bb-alerts",
@@ -1098,7 +1098,7 @@ dependencies = [
 [[package]]
 name = "bb-strategy-funding-arb"
 version = "0.1.0"
-source = "git+https://github.com/bulletxyz/bullet-bots?tag=v8#d62f1549694bfab3780d279b6f05ea60287330ca"
+source = "git+https://github.com/bulletxyz/bullet-bots?tag=v11#7dd063b0dce0596babea9c37650e7ecf10de7918"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1275,7 +1275,7 @@ dependencies = [
 [[package]]
 name = "bullet-agents"
 version = "0.1.0"
-source = "git+https://github.com/bulletxyz/bullet-bots?tag=v8#d62f1549694bfab3780d279b6f05ea60287330ca"
+source = "git+https://github.com/bulletxyz/bullet-bots?tag=v11#7dd063b0dce0596babea9c37650e7ecf10de7918"
 dependencies = [
  "async-trait",
  "axum",

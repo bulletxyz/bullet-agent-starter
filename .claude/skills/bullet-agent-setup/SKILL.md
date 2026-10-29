@@ -30,10 +30,12 @@ Hard rules:
   later from the Claude app.
 
 Names used below:
-- `<handle>`: a short name the user picks (lowercase letters, digits, dashes).
-- `<name>`: the Fly app, `<handle>-bullet-agent` (add a suffix if it is taken).
 - `<repo>`: this repo as `owner/name`
   (`gh repo view --json nameWithOwner --jq .nameWithOwner`).
+- `<name>`: the Fly app, `<owner>-<repo name>` (e.g. `alice-bullet-mm`), lowercased,
+  with anything other than letters and digits turned into dashes. One repo and one
+  Fly app per strategy, so the name says which strategy it runs. Taken: add `-2`,
+  `-3`, ... Don't ask the user for a name.
 - `<org>`: the Fly organization slug (`fly orgs list`, usually `personal`).
 
 Shell variables do not survive between your commands: run each block below as ONE
@@ -48,6 +50,14 @@ what setup does: about 20 minutes of their time (plus a build that runs on its o
 and they need a GitHub account, a Fly.io account with a card (about $5 a month) and
 a Bullet account they can fund.
 
+Then ask which strategy to run, as a choice:
+1. **Market maker**: quotes both sides of BTC-USD around the Binance price and
+   earns the spread. This repo.
+2. **Funding arb** (coming soon, not available yet): earns the funding-rate gap
+   between Bullet and Hyperliquid, hedged.
+Funding arb: say it isn't ready yet and offer the market maker for now; stop if
+they don't want it.
+
 ### 2. GitHub and Fly on this computer
 1. GitHub CLI: `command -v gh && gh auth status`. Missing: macOS `brew install gh`,
    Linux/WSL `https://github.com/cli/cli#installation`. Not logged in (no account
@@ -58,11 +68,13 @@ a Bullet account they can fund.
 2. Check this is the user's own private copy:
    `gh repo view --json nameWithOwner,visibility,isTemplate`. If it is
    `bulletxyz/bullet-agent-starter` itself, a template, not `PRIVATE`, or there is no
-   repo, create their copy (ask for `<handle>` first):
+   repo, create their copy, named after the strategy (taken: `bullet-mm-2`, ...):
    ```sh
-   gh repo create <handle>-bullet-agent --private --template bulletxyz/bullet-agent-starter --clone
+   gh repo create bullet-mm --private --template bulletxyz/bullet-agent-starter --clone
    ```
-   Then tell them to open the new `<handle>-bullet-agent` folder in Claude Code and
+   (While `bulletxyz/bullet-bots` is private, see step 5: create it in the org
+   instead, `gh repo create bulletxyz/bullet-mm ...`, if they may.)
+   Then tell them to open the folder it created (`bullet-mm`, or the suffixed name) in Claude Code and
    say "set up my Bullet agent" again, and stop here.
 3. If `git config user.email` prints nothing, set a repo-local author:
    `git config user.name "<owner>"` and
@@ -82,14 +94,15 @@ a Bullet account they can fund.
    `isCreditCardSaved` is not `true`, send them to
    `https://fly.io/dashboard/<org>/billing` to add a card, then check again.
 
-### 3. Fund the account and propose limits
-1. Read the order size from `agent.toml` (`order_size`, 0.0003 BTC in the starter)
-   and get the price
+### 3. Choose and fund the account
+1. Read the order size from `agent.toml` (`order_size`: 0.0001 BTC in the starter,
+   the venue minimum, about $8) and get the price
    (`curl -s "https://tradingapi.bullet.xyz/fapi/v1/ticker/price?symbol=BTC-USD"`).
-   State the minimum before they fund: the agent quotes 2 orders of `order_size`, so
-   its max position (20% of equity) must be at least 2 × `order_size`, i.e. equity
-   of at least 2 × `order_size` × price × 5 (0.0006 × price × 5 with the starter's
-   size: about $245 at $81.5k; give the current figure).
+   State the minimum to go live later: the agent quotes 2 orders of `order_size`,
+   and its max position (at most 1x: equity / price) must cover both, so equity of
+   at least 2 × `order_size` × price (about $16 at $80k with the starter's size; give
+   the current figure). Paper trading needs no funds, so they can fund any time
+   before going live.
 2. In the same message, offer the account choice:
    - **Sub-account (recommended).** The agent's key is a delegate on that sub-account
      only, so Bullet itself stops it touching the main account or other sub-accounts.
@@ -100,26 +113,17 @@ a Bullet account they can fund.
      and its close tool would flatten the whole position. The key can trade
      everything else in the account too (it can never withdraw).
    No funded Bullet account yet: `https://app.bullet.xyz/trade?r=BB` (referral `BB`).
-   Have them fund the chosen account (for a sub-account: create it, move the capital
-   in) and reply with its **index** (the number next to it in the app: "Subaccount 1"
-   is 1) and its **equity in USD**.
-3. Propose the limits and wait for their yes before using them:
-   - `BB_MM_MAX_POSITION` in BTC = about 20% of equity / BTC price (round down to
-     0.0001 BTC steps). Below 2 × `order_size` the account is too small: stop until
-     they add funds. Never raise the cap above 20% of equity to make it fit.
-   - `BB_MM_DAILY_LOSS_USD` = about 5% of equity.
-   Explain: "max position caps the orders that would grow the position past that
-   much BTC either way (orders that reduce it always go through); the daily
-   loss is the amount at which it stops and cancels. They live on your Fly app, not
-   in the code, so no code change can raise them."
+   For a sub-account they create it in the app now and move in what they want the
+   agent to trade with. Don't ask for its index or balance: they pick it when they
+   add the delegate (step 7), and you read its balance from Bullet before going
+   live (step 10).
 
 ### 4. The Fly app, its volume and secrets
-1. Ask for `<handle>` if you don't have it yet. Create the app and its volume in
-   Tokyo (the deploy adds the machine):
+1. Create the app and its volume in Tokyo (the deploy adds the machine):
    ```sh
    fly apps create <name> --org <org> && fly volumes create data --app <name> --region nrt --size 1 --yes
    ```
-   Name taken: add a suffix and retry.
+   Name taken: add the next suffix and retry.
 2. Decide Telegram alerts (`references/telegram.md`): relay mode if the relay
    answers, otherwise their own bot (they run its command now), or none.
 3. Make the sign-in code: run `openssl rand -hex 16` and note the 32-character code
@@ -127,10 +131,10 @@ a Bullet account they can fund.
    nothing restarts):
    ```sh
    fly secrets set --app <name> --stage \
-     BB_MCP_PAIRING_CODE=<code> \
-     BB_MM_MAX_POSITION=<btc> \
-     BB_MM_DAILY_LOSS_USD=<usd>
+     BB_MCP_PAIRING_CODE=<code>
    ```
+   No limits yet: paper trading caps itself at 10 orders' worth, and the limits are
+   set from the account's balance before going live (step 10).
    Append to this same command:
    - relay mode: `BB_ALERTS_RELAY_URL=...` (`references/telegram.md`). Own bot:
      nothing here; the user already staged its two secrets with the telegram.md
@@ -149,6 +153,27 @@ The token goes straight from Fly into the repo's secret; never print it:
 ```sh
 fly tokens create deploy --app <name> -x 8760h | gh secret set FLY_API_TOKEN --repo <repo>
 ```
+Then check whether the framework repo is public:
+`gh repo view bulletxyz/bullet-bots --json visibility --jq .visibility`. Only
+`PUBLIC` means nothing more is needed. `PRIVATE`, or any error (the user can't
+read it, or the command failed): it is private, and the agent can't build without
+these two things (an error: rerun it first; still an error, ask the Bullet team for
+access and stop):
+1. This repo must be in the `bulletxyz` org (only its repos may use the framework's
+   deploy workflow). If `<repo>` is not `bulletxyz/...`, move it:
+   `gh repo transfer <repo> bulletxyz` (needs permission to create repos in the
+   org; otherwise ask the Bullet team), then `git remote set-url origin
+   https://github.com/bulletxyz/<repo name>.git`, and use the new `<repo>` from
+   here on (redo the `FLY_API_TOKEN` secret if it didn't move with the repo:
+   `gh secret list --repo <repo>`).
+2. The secret `BULLET_BOTS_TOKEN`: a fine-grained GitHub token with read-only
+   **Contents** on `bulletxyz/bullet-bots`. Have the user create one at
+   `https://github.com/settings/personal-access-tokens/new` (resource owner
+   `bulletxyz`, only that repository, Contents: Read-only, and the **longest
+   expiration** offered: the default is 30 days, and when it lapses CI and deploys
+   fail with git authentication errors), then run
+   `gh secret set BULLET_BOTS_TOKEN --repo <repo>` and paste it at its hidden prompt
+   (never into chat). To renew it later: a new token, the same command.
 
 ### 6. First deploy (paper)
 Every merge to `master` deploys the next version (v1, v2, ...) through
@@ -166,8 +191,9 @@ Every merge to `master` deploys the next version (v1, v2, ...) through
    done
    if [ -n "$id" ]; then echo "run $id"; gh run watch "$id" --repo <repo> --exit-status; else echo "deploy run did not start"; false; fi
    ```
-   Tell the user the first build compiles the whole agent and takes a while (15-25
-   minutes; later changes are faster). If your command times out, keep watching with
+   Tell the user the build takes a few minutes (it starts from the release's
+   prebuilt dependencies; on a framework release without them, the first build
+   takes 15-25 minutes and later ones are faster). If your command times out, keep watching with
    `gh run watch <id> --repo <repo> --exit-status`. `deploy run did not start`: ask
    them to open `https://github.com/<repo>/actions` and tell you what they see, and
    stop. A failed run: `references/troubleshooting.md`, Deploy.
@@ -176,13 +202,13 @@ Every merge to `master` deploys the next version (v1, v2, ...) through
 
 ### 7. Delegate the agent's key on Bullet
 1. Once a minute `fly logs --app <name> --no-tail` prints `waiting for delegation:
-   add <address> at app.bullet.xyz → Delegate accounts`, then `or open this link to
+   add <address> as a delegate in the Bullet app (Delegate accounts)`, then `or open this link to
    add it: <link>` (address only: `curl -s https://<name>.fly.dev/health`).
-2. Sub-account: append `&subAccount=<i>` (the index from step 3) to `<link>`, so the
-   form opens on the agent's sub-account. Main account: use `<link>` as is. Tell the
-   user to open it (it prefills the agent's PUBLIC address, safe to share, and the
-   name) and approve in their wallet. If the form doesn't open prefilled:
-   app.bullet.xyz, **Delegate accounts**, choose the account in the form's account
+2. Tell the user to open `<link>` (it prefills the agent's PUBLIC address, safe to
+   share, and the name), pick the account in the form's account dropdown (the
+   sub-account they funded, or the main account if they chose that), and approve in
+   their wallet. If the form doesn't open prefilled:
+   app.bullet.xyz (app.testnet.bullet.xyz on testnet), **Delegate accounts**, choose the account in the form's account
    dropdown, add a delegate named "market maker", paste `<address>`.
 3. Watch `fly logs --app <name>` until `Bullet: delegation found`. On a sub-account,
    `master=` and the `connected + subscribed` line's `account=` are the
@@ -202,19 +228,20 @@ Every merge to `master` deploys the next version (v1, v2, ...) through
      wallet) or the pairing code `<code>` (always works; shown only here, so save it
      in a password manager). Fallback: Settings, Connectors, Add custom connector,
      name "Bullet bot", URL `https://<name>.fly.dev/mcp`.
-   - **Tool permissions** (Settings, Connectors, Bullet bot): **Always allow** the
-     read tools `bullet_briefing`, `bullet_positions`, `bullet_balances`,
-     `bullet_params`, `bullet_history`, `bullet_logs`, `bullet_metrics`,
-     `bullet_pnl_attribution`, `bullet_chart`, `bullet_funding_opportunities`,
-     `bullet_versions`; leave `bullet_set_params`, `bullet_pause`, `bullet_resume`,
-     `bullet_close_position` on "Needs approval". (In Claude Cowork the option may
-     be greyed out by the org admin: use a normal chat.)
+   - **Tool permissions** (Customize, Connectors, Bullet bot, Tool permissions):
+     set the **read-only** tools group to **Always allow** in one go, and leave the
+     rest (settings changes, pause, resume, close position) on "Needs approval", so
+     nothing changes without a tap. Or simply tap "Always allow" the first time each
+     read tool asks. (In Claude Cowork the option may be greyed out by the org
+     admin: use a normal chat.)
    - **Telegram:** tap the link and press Start (own bot: send `/start <LINK>` to
      it, `references/telegram.md`).
    - **Try it:** a new chat with the connector on: "How's my agent doing?"
 
 ### 9. Improve it from the phone
-Tell the user how tweaks work from now on:
+Setup ends here, in this one session; nothing else needs a second session now. Tell
+the user how tweaks work from now on (this local session stays the place for
+deploys by hand, going live and framework updates):
 - **Settings** (spread, size, skew, pause): ask in the Claude app with the connector
   on, e.g. "widen the spread a bit". Applied live, within bounds; the app asks before
   each change.
@@ -222,7 +249,7 @@ Tell the user how tweaks work from now on:
   this repo. Claude makes the change on a branch with tests and opens a pull request
   that says in plain words what changes and what to expect. Saying "ship it" (or
   tapping **Merge** in the GitHub app) deploys it as the next version.
-Set it up now:
+Set the phone up now:
 1. Give Claude Code on the web access to this private repo: install the Claude
    GitHub App on it (`https://github.com/apps/claude`, choose "Only select
    repositories", pick `<repo>`), or run `/web-setup` once in this Claude Code.
@@ -241,15 +268,30 @@ they are optimistic), and to tune spread, size and skew in the Claude app first.
 Going live, only when they come back and ask for it; never on your own:
 1. Say this plainly, in one sentence: from now on this trades real money, you can
    lose money and the losses are yours, Bullet's terms apply, so start small.
-2. Restate in plain words: the agent's account and current balance (the Bullet app,
-   or `bullet_balances`), max position `BB_MM_MAX_POSITION` = <btc> BTC and daily
-   loss `BB_MM_DAILY_LOSS_USD` = $<usd> (`fly secrets list --app <name>` shows they
-   are set, not their values: use the ones agreed in step 3), and the account-choice
-   note from step 3. Offer to change the limits first
-   (`fly secrets set --app <name> BB_MM_MAX_POSITION=<btc>`; restarts the agent).
-3. Ask for an explicit yes: "Go live with real orders on `<account>`, no new
-   position-growing orders past <btc> BTC either way, stopping for the day at a $<usd> loss?"
-4. Only after that yes, as one command:
+2. Read the account's balance from Bullet; don't ask for it. `<account>` is the
+   `master=` address on the `Bullet: delegation found` line of `fly logs --app
+   <name> --no-tail` (or `bullet_balances` in the connector). Its equity is
+   `totalMarginBalance` in
+   `curl -s "https://tradingapi.bullet.xyz/fapi/v3/account?address=<account>"`
+   (a 404 means it is not funded yet), and get the price fresh now (step 3's ticker command; it may have moved since).
+3. Propose the limits from that equity and wait for their yes:
+   - `BB_MM_MAX_POSITION` in BTC = equity / BTC price (1x), rounded down to
+     0.0001 BTC. Below 2 × the order size the agent runs now (`order_size` from
+     `bullet_params`: they may have tuned it while paper trading) the account is
+     too small: give the minimum for that size, and stop until they add funds or
+     lower the size. Never raise the cap to make it fit.
+     They can choose lower, or up to 3x if they ask (say first: at 3x a full position is liquidated by a ~30% move against it; the daily loss stop halts trading long before). Never above 3x.
+   - `BB_MM_DAILY_LOSS_USD` = about 5% of equity.
+   Explain: "max position caps the orders that would grow the position past that
+   much BTC either way (orders that reduce it always go through); the daily loss is
+   the amount at which it stops and cancels. They live on your Fly app, not in the
+   code, so no code change can raise them." Restate the account-choice note from
+   step 3. On their yes:
+   `fly secrets set --app <name> BB_MM_MAX_POSITION=<btc> BB_MM_DAILY_LOSS_USD=<usd>`
+   (restarts the agent, still paper).
+4. Read `bullet_params` (the limits now in force) and `bullet_balances`, then ask for
+   an explicit yes: "Go live with real orders on `<account>` ($<equity>), no new position-growing orders past <btc> BTC either way, stopping for the day at a $<usd> loss?"
+5. Only after that yes, as one command:
    ```sh
    before=$(gh run list --repo <repo> --workflow deploy.yml --limit 10 --json databaseId --jq 'map(.databaseId) | max // 0')
    gh workflow run deploy.yml --repo <repo> -f action=go-live || { echo "could not start go-live"; exit 1; }
@@ -260,10 +302,10 @@ Going live, only when they come back and ask for it; never on your own:
    if [ -n "$id" ]; then gh run watch "$id" --repo <repo> --exit-status; else echo "go-live run did not start"; false; fi
    ```
    The workflow refuses (still paper) if either limit secret is missing.
-5. Verify after the restart (`fly status --app <name>`): the next briefing does NOT
+6. Verify after the restart (`fly status --app <name>`): the next briefing does NOT
    say "paper trading" (or `fly ssh console --app <name> -C "printenv
    BB_MM_DRY_RUN"` prints `false`).
-6. Back to paper at any time, in this order (in paper mode the agent can no longer
+7. Back to paper at any time, in this order (in paper mode the agent can no longer
    cancel real orders or close a real position, so do both while it is live):
    `bullet_pause` (cancels the resting orders); ask whether to close the position
    and only on a yes `bullet_close_position`; check `bullet_positions` and
@@ -281,8 +323,8 @@ actions.
 The same flow with `BB_NETWORK=testnet` in the step-4 secrets (a secret, since it
 must override the framework's `[env]`); the stale-price default is 60 s there.
 - Use `https://app.testnet.bullet.xyz` for the faucet and Delegate accounts (the
-  log's link points there; its `add <address> at app.bullet.xyz` line does not).
-- Size limits from the testnet price:
+  log's link points there).
+- Testnet price and balance: `tradingapi.testnet.bullet.xyz` in place of `tradingapi.bullet.xyz`, e.g.
   `https://tradingapi.testnet.bullet.xyz/fapi/v1/ticker/price?symbol=BTC-USD`.
 - Moving to mainnet later: `fly secrets unset --app <name> BB_NETWORK`, then redo
   steps 3 and 7 for the mainnet account.

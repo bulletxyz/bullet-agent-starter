@@ -24,7 +24,7 @@ Always start with `fly logs --app <name> --no-tail` and `fly status --app <name>
   `git fetch --tags && git tag -l 'bot-v*'`. Nothing was deployed.
 - **go-live says `has no BB_MM_MAX_POSITION secret` (or `BB_MM_DAILY_LOSS_USD`)**: the
   limits are not set; still paper trading. Set them with the user's yes (SKILL.md
-  step 4), then run go-live again.
+  step 10), then run go-live again.
 - **App name taken**: add a suffix and redo `fly apps create`; then the volume, the
   secrets, the token and `fly-app` all use the new name.
 - **Volume error / machine won't start**: the volume must exist in `nrt` before the
