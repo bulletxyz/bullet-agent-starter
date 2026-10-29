@@ -18,10 +18,10 @@ path = "src/main.rs"
 # The framework. Upgrade by bumping the tag (and `cargo update -p bullet-agents`);
 # bump this entry and the [dev-dependencies] one together, to the same tag.
 # Never enable its `published-image` feature: hard limits come only from Fly secrets.
-bullet-agents = { git = "https://github.com/bulletxyz/bullet-bots", tag = "v11" }
+bullet-agents = { git = "https://github.com/bulletxyz/bullet-bots", tag = "v12" }
 
 [dev-dependencies]
-bullet-agents = { git = "https://github.com/bulletxyz/bullet-bots", tag = "v11", features = ["testing"] }
+bullet-agents = { git = "https://github.com/bulletxyz/bullet-bots", tag = "v12", features = ["testing"] }
 
 [lints.rust]
 unsafe_code = "deny"

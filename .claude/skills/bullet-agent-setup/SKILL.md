@@ -171,9 +171,16 @@ access and stop):
    `https://github.com/settings/personal-access-tokens/new` (resource owner
    `bulletxyz`, only that repository, Contents: Read-only, and the **longest
    expiration** offered: the default is 30 days, and when it lapses CI and deploys
-   fail with git authentication errors), then run
-   `gh secret set BULLET_BOTS_TOKEN --repo <repo>` and paste it at its hidden prompt
-   (never into chat). To renew it later: a new token, the same command.
+   fail with git authentication errors) and copy it. Never into chat. Then, on a
+   Mac, have them run in this session
+   `! pbpaste | gh secret set BULLET_BOTS_TOKEN --repo <repo>` (it reads the
+   clipboard; then copy something else). Elsewhere, have them run
+   `gh secret set BULLET_BOTS_TOKEN --repo <repo>` in a normal terminal and paste
+   at its hidden prompt. Not `! gh secret set ...` without the pipe: a `!` command
+   has no prompt, so it saves an EMPTY secret and the build still can't fetch the
+   framework. Check `gh secret list --repo <repo>` shows it with the current time;
+   if the first build fails with `failed to get bullet-agents`, the token is wrong
+   or empty: set it again. To renew it later: a new token, the same command.
 
 ### 6. First deploy (paper)
 Every merge to `master` deploys the next version (v1, v2, ...) through

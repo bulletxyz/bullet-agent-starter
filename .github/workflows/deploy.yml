@@ -35,7 +35,7 @@ permissions:
 jobs:
   deploy:
     # Same release as bullet-agents in Cargo.toml.
-    uses: bulletxyz/bullet-bots/.github/workflows/agent-deploy.yml@v11
+    uses: bulletxyz/bullet-bots/.github/workflows/agent-deploy.yml@v12
     with:
       fly-app: ""
       action: ${{ inputs.action || 'deploy' }}
